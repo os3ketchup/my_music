@@ -15,9 +15,13 @@ import com.example.mp3player.models.Song
 
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 
 import android.provider.MediaStore
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
 
 
 import androidx.navigation.fragment.findNavController
@@ -29,28 +33,37 @@ import java.io.File
 
 class PlayMusic : Fragment() {
     lateinit var binding: FragmentPlayMusicBinding
-    lateinit var musicAdapter: MusicAdapter
-    lateinit var list:ArrayList<Song>
+    private lateinit var musicAdapter: MusicAdapter
+
+
+
+    companion object{
+        lateinit var PlayListPM:ArrayList<Song>
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentPlayMusicBinding.inflate(inflater, container, false)
+        requestRuntimePermission()
+        if (requestRuntimePermission())
         initializeLayout()
         return binding.root
     }
+
 
     private fun initializeLayout() {
         binding.apply {
             rvMusicList.setHasFixedSize(true)
             rvMusicList.setItemViewCacheSize(13)
-            list = getAllAudio()
-            musicAdapter = MusicAdapter(binding.root.context,list,object:MusicAdapter.RvClick{
-                override fun itemClick(song: Song) {
+            PlayListPM = getAllAudio()
+            musicAdapter = MusicAdapter(binding.root.context, PlayListPM,object:MusicAdapter.RvClick{
+                override fun itemClick(song: Song,position:Int) {
                     findNavController().navigate(R.id.allMusic, Bundle().apply {
                         putSerializable("music",song)
-
+                        putInt("position",position)
                     })
                 }
 
@@ -98,6 +111,52 @@ class PlayMusic : Fragment() {
             }
 
         return tempList
+    }
+
+    private fun requestRuntimePermission():Boolean {
+        if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                1
+            )
+            return false
+        }
+        return true
+    }
+
+
+
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 1) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                Toast.makeText(binding.root.context, "granted", Toast.LENGTH_SHORT).show()
+                initializeLayout()
+            }
+
+
+            else
+                ActivityCompat.requestPermissions(
+                    requireActivity(),
+                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    1
+                )
+
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        initializeLayout()
     }
 
 

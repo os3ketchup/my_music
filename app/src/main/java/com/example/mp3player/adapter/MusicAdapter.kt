@@ -15,12 +15,12 @@ class MusicAdapter(var context:Context,var list: List<Song>,val rvClick: RvClick
 
     inner class VH(private var itemRV: ItemListBinding):RecyclerView.ViewHolder(itemRV.root){
         var image = itemRV.itemPhoto
-        fun onBind(song: Song){
+        fun onBind(song: Song,position: Int){
             itemRV.tvItemAuthor.text = song.artist
             itemRV.tvItemName.text = song.title
 
             itemRV.root.setOnClickListener {
-                rvClick.itemClick(song)
+                rvClick.itemClick(song, position)
 
             }
 
@@ -33,7 +33,7 @@ class MusicAdapter(var context:Context,var list: List<Song>,val rvClick: RvClick
 
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.onBind(list[position])
+        holder.onBind(list[position],position)
         Glide.with(context).load(list[position].artUri).apply(RequestOptions().placeholder(
             R.drawable.photo)).into(holder.image)
 
@@ -44,7 +44,7 @@ class MusicAdapter(var context:Context,var list: List<Song>,val rvClick: RvClick
     }
 
     interface RvClick{
-        fun itemClick(song: Song)
+        fun itemClick(song: Song,position: Int)
 
     }
 }
