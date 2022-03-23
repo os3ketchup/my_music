@@ -3,15 +3,23 @@ package com.example.mp3player
 import android.annotation.SuppressLint
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.SeekBar
+
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.example.mp3player.databinding.FragmentAllMusicBinding
 import com.example.mp3player.models.Song
 
+
 class AllMusic : Fragment() {
     private lateinit var binding: FragmentAllMusicBinding
+    lateinit var runnable: Runnable
+
     companion object{
         lateinit var musicListAM:ArrayList<Song>
     }
@@ -34,7 +42,7 @@ class AllMusic : Fragment() {
         binding.ivPausePlay.setOnClickListener { if (isPlayed) pauseMusic() else playMusic()}
         binding.ivBack.setOnClickListener { prevNextSong(false) }
         binding.ivNext.setOnClickListener { prevNextSong(true) }
-      /*  binding.seekBarMusic.setOnSeekBarChangeListener(object :SeekBar.OnSeekBarChangeListener{
+        binding.seekBarMusic.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if(fromUser){
                     mediaPlayer!!.seekTo(progress)
@@ -42,7 +50,19 @@ class AllMusic : Fragment() {
             }
             override fun onStartTrackingTouch(p0: SeekBar?):Unit {}
             override fun onStopTrackingTouch(p0: SeekBar?) :Unit{}
-        })*/
+        })
+        binding.ivForward30.setOnClickListener {
+            mediaPlayer?.seekTo(mediaPlayer?.currentPosition!!.plus(30000))
+        }
+        binding.ivBack30.setOnClickListener {
+            mediaPlayer?.seekTo(mediaPlayer?.currentPosition!!.minus(30000))
+        }
+        binding.ivMenu.setOnClickListener {
+
+            findNavController().popBackStack()
+            mediaPlayer?.reset()
+        }
+
     }
 
 
@@ -72,7 +92,21 @@ class AllMusic : Fragment() {
             mediaPlayer!!.setDataSource(musicListAM[musicPosition].path )
             mediaPlayer!!.prepare()
             mediaPlayer!!.start()
+            binding.seekBarMusic.progress = 0
+            binding.seekBarMusic.max = mediaPlayer!!.duration
+
         }catch (e:Exception){return}
+    }
+
+    @SuppressLint("SetTextI18n")
+    fun seekBarSetup(){
+        runnable = Runnable {
+            binding.seekBarMusic.progress = mediaPlayer!!.currentPosition
+            binding.tvProgress.text = musicListAM[musicPosition].formatDuration((mediaPlayer!!.currentPosition.toLong())) + "/" + musicListAM[musicPosition].formatDuration((mediaPlayer!!.duration.toLong()))
+            Handler(Looper.getMainLooper()).postDelayed(runnable,200)
+
+        }
+        Handler(Looper.getMainLooper()).postDelayed(runnable,0)
     }
     private fun initializeLayout(){
         song = requireArguments().getSerializable("music") as Song
@@ -85,6 +119,7 @@ class AllMusic : Fragment() {
         musicListAM.addAll(PlayMusic.PlayListPM)
         setLayout()
         createMediaPlayer()
+        seekBarSetup()
     }
 
 
@@ -105,10 +140,12 @@ class AllMusic : Fragment() {
             setSongPosition(increment = true)
             setLayout()
             createMediaPlayer()
+            seekBarSetup()
         }else{
             setSongPosition(increment = false)
             setLayout()
             createMediaPlayer()
+            seekBarSetup()
         }
     }
 
@@ -124,5 +161,11 @@ class AllMusic : Fragment() {
         }
     }
 
+
+
+    override fun onPause() {
+        super.onPause()
+        mediaPlayer!!.reset()
+    }
 
 }
